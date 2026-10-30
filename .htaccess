@@ -1,0 +1,64 @@
+# ============================================================
+#  Elektro Beránek — solarni-elektrarny.eu (Apache)
+#  Všechny bloky jsou v <IfModule>, aby nerozbily hosting bez daného modulu.
+# ============================================================
+
+DirectoryIndex index.html index.php
+ErrorDocument 404 /404.html
+Options -Indexes
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Jednotná doména s www (stejně jako v původní sitemap).
+  # Vynucení HTTPS záměrně neřešíme zde: hosting běží za proxy (openresty) a %{HTTPS}
+  # by mohlo způsobit smyčku. HTTPS nastavte v administraci hostingu.
+  RewriteCond %{HTTP_HOST} ^solarni-elektrarny\.eu$ [NC]
+  RewriteRule ^ https://www.solarni-elektrarny.eu%{REQUEST_URI} [R=301,L]
+
+  # Původní adresy *.php → nové *.html (trvalé přesměrování)
+  RewriteRule ^(onas|sluzby|cenik|faq|kontakt|dotace|fotovoltaika|instalace)\.php$ /$1.html [R=301,L,NC]
+
+  # index.php a index.html → kořen webu (jen při přímém požadavku, bez smyčky)
+  RewriteCond %{THE_REQUEST} \s/+index\.(php|html)[\s?] [NC]
+  RewriteRule ^index\.(php|html)$ / [R=301,L,NC]
+
+  # Vývojové a pracovní složky nejsou veřejné
+  RewriteRule ^(_vyvoj|_podklady)(/|$) - [F,L,NC]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+  # Po ověření, že celý web běží na HTTPS, lze zapnout HSTS:
+  # Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; frame-src https://www.google.com; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+
+  <FilesMatch "\.(css|js|woff2|webp|avif|png|jpg|ico|svg)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType image/avif .avif
+  AddType image/webp .webp
+  AddType font/woff2 .woff2
+  AddType application/manifest+json .webmanifest
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/manifest+json text/plain application/xml
+</IfModule>
+
+# Zdrojové a pomocné soubory nezobrazovat
+<FilesMatch "^(README\.md|\.htaccess)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>

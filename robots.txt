@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /odeslat.php
+Disallow: /_vyvoj/
+Disallow: /_podklady/
+
+Sitemap: https://www.solarni-elektrarny.eu/sitemap.xml
